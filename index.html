@@ -333,7 +333,7 @@
   </div>
  
   <div class="instruction-banner" id="instructionBanner">
-    <strong>⚠ Instructions:</strong> Fill in vendor details in Section 01. In Section 02, click the category tabs to browse products. For each product, enter the <strong>Rate (₹/pc excl. GST)</strong>, Make/Brand, Remarks and upload the Datasheet. Product names, specifications &amp; quantities are <strong>locked</strong> — only Rate, Make, Remarks &amp; Datasheet are editable.
+    <strong>⚠ Instructions:</strong> Fill in vendor details in Section 01. In Section 02, click the category tabs to browse products. For each product, enter the <strong>Rate (₹/pc excl. GST)</strong> and <strong>Make / Brand</strong> (mandatory), Remarks and upload the Datasheet. Product names, specifications &amp; quantities are <strong>locked</strong> — only Rate, Make, Remarks &amp; Datasheet are editable.
   </div>
  
   <!-- SECTION 01 -->
@@ -692,7 +692,7 @@ function previewVendorView() {
 }
 function resetInstructionBanner() {
   document.getElementById('instructionBanner').innerHTML =
-    '<strong>⚠ Instructions:</strong> Fill in vendor details in Section 01. In Section 02, click the category tabs to browse products. For each product, enter the <strong>Rate (₹/pc excl. GST)</strong>, Make/Brand, Remarks and upload the Datasheet. Product names, specifications &amp; quantities are <strong>locked</strong> — only Rate, Make, Remarks &amp; Datasheet are editable.';
+    '<strong>⚠ Instructions:</strong> Fill in vendor details in Section 01. In Section 02, click the category tabs to browse products. For each product, enter the <strong>Rate (₹/pc excl. GST)</strong> and <strong>Make / Brand</strong> (mandatory), Remarks and upload the Datasheet. Product names, specifications &amp; quantities are <strong>locked</strong> — only Rate, Make, Remarks &amp; Datasheet are editable.';
 }
  
 document.addEventListener('keydown', e => {
@@ -880,7 +880,7 @@ function buildPanelHTML(cat, items) {
           placeholder="₹ 0.00" id="price_${idx}">
       </td>
       <td>
-        <input class="make-input" type="text" placeholder="Brand / Make" id="make_${idx}">
+        <input class="make-input" type="text" placeholder="Brand / Make *" id="make_${idx}">
       </td>
       <td>
         <input class="remarks-input" type="text" placeholder="Optional" id="rem_${idx}">
@@ -910,7 +910,7 @@ function buildPanelHTML(cat, items) {
             <th>Specification <span class="lock-badge">🔒 Locked</span></th>
             <th>Qty Required <span class="lock-badge">🔒 Locked</span></th>
             <th class="editable-col">★ Rate (₹/pc excl. GST)</th>
-            <th class="editable-col">Make / Brand</th>
+            <th class="editable-col">Make / Brand <span style="color:#e74c3c;">*</span></th>
             <th class="editable-col">Remarks</th>
             <th class="editable-col">📎 Datasheet</th>
             <th class="admin-col">Admin</th>
@@ -1167,9 +1167,25 @@ function submitForm() {
  
   const data = collectData();
   let priceCount = 0;
-  Object.values(data.rates).forEach(cat => {
-    cat.forEach(item => { if (item.price && item.price !== '') priceCount++; });
+  const missingMake = [];
+  Object.keys(data.rates).forEach(cat => {
+    data.rates[cat].forEach(item => {
+      if (item.price && item.price !== '') {
+        priceCount++;
+        if (!item.make || String(item.make).trim() === '') {
+          missingMake.push(`• ${cat} → ${item.name}`);
+        }
+      }
+    });
   });
+
+  if (missingMake.length > 0) {
+    alert('⚠ Make / Brand is mandatory for every product where you have entered a rate.\n\n' +
+          'Please fill Make / Brand for the following item(s):\n\n' +
+          missingMake.join('\n'));
+    return;
+  }
+
   if (priceCount === 0) {
     const go = confirm('You have not entered any rates. Submit anyway?');
     if (!go) return;
